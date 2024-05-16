@@ -18,14 +18,14 @@ add_compile_options(
 
 add_executable(${ProjName})
 
-target_sources(${ProjName} PRIVATE myproject.c)
+target_sources(${ProjName} PRIVATE ultrasound_range.c)
 
-add_subdirectory(myproject_library)
+add_subdirectory(squarewave)
 
 target_link_libraries(${ProjName} PRIVATE
 	pico_stdlib
 	hardware_pio
-	myproject_library)
+	squarewave)
 
 pico_add_extra_outputs(${ProjName})
 

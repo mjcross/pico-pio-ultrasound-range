@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "myproject_library.h"
+#include "squarewave.h"
 
 
 const PIO pio = pio0;
