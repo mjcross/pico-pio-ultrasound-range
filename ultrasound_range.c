@@ -1,25 +1,20 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "squarewave.h"
+#include "hardware/clocks.h"
+#include "ultrasound.h"
 
-
-const PIO pio = pio0;
-const uint gpio = PICO_DEFAULT_LED_PIN;
+#define TX_GPIO 15
+#define TX_FREQ_HZ 41000
 
 int main() {
     stdio_init_all();
 
-    uint sm;
-    if (squarewave_init (pio, &sm, gpio)) {
-        puts ("running");
-        while(true) {
-            pio_sm_put (pio, sm, 1);    // turn led on
-            sleep_ms (500);
-            pio_sm_put (pio, sm, 0);    // turn led off
-            sleep_ms (500);
-        }
+    uint tx_sm;
+    uint tx_clk_div = clock_get_hz(clk_sys) / (2 * TX_FREQ_HZ);
+    if (tx_init (pio0, &tx_sm, TX_GPIO, tx_clk_div)) {
+        puts ("TX running");
     }
 
-    puts ("halted");
+    puts ("done");
     while (true);
 }

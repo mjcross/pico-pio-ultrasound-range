@@ -1,0 +1,28 @@
+.program tx
+.side_set 1
+
+PUBLIC entry:
+.wrap_target
+    nop             side 0
+    irq nowait 7    side 1  ; set GPIO high, raise IRQ7 and continue immediately
+.wrap
+
+
+% c-sdk {
+static inline void tx_sm_init (PIO pio, uint sm, uint offset, uint gpio, uint clk_div_int) {
+    // create and initialise a state machine configuration
+    pio_sm_config config = tx_program_get_default_config (offset);
+
+    // update the configuration with the base sideset pin
+    sm_config_set_sideset_pins (&config, gpio);
+
+    // update the configuration with the clock divider (integer only, to avoid jitter)
+    sm_config_set_clkdiv_int_frac (&config, clk_div_int, 0);
+
+    // apply the configuration to the state machine and initialise program counter to 'entry'
+    pio_sm_init (pio, sm, offset + tx_offset_entry, &config);
+
+    // start state machine
+    pio_sm_set_enabled (pio, sm, true);
+}
+%}

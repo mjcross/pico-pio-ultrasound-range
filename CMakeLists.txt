@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.5)
 
 include(pico_sdk_import.cmake)
 
@@ -20,12 +20,12 @@ add_executable(${ProjName})
 
 target_sources(${ProjName} PRIVATE ultrasound_range.c)
 
-add_subdirectory(squarewave)
+add_subdirectory(ultrasound_lib)
 
 target_link_libraries(${ProjName} PRIVATE
 	pico_stdlib
 	hardware_pio
-	squarewave)
+	ultrasound_lib)
 
 pico_add_extra_outputs(${ProjName})
 
