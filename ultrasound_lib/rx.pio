@@ -1,44 +1,46 @@
 .program rx
 
 ;;---------------------------------------------------
-;; Measure the delay between the rising edges of the
+;; Measure the delay between the falling edges of the
 ;; transmitted and received signals.
 ;; Accumulate the count over a certain number of
-;; carrier cycles then send it via the RX FIFO.
-;; Synchronise with the TX program using IRQ7.
+;; carrier periods then send it via the RX FIFO.
+;; Synchronise with the TX program using IRQ 7.
 ;;---------------------------------------------------
 
 ; send result to RX FIFO
 send_result:
-    MOV ISR, X
+    MOV ISR, !X         ; invert sign of counter
     PUSH noblock
 
 ; initialise counters
 PUBLIC entry:
     SET X, 0            ; reset counter
-    SET Y, 16           ; cycles to count over
+    SET Y, 16           ; carrier periods to count over
 
-; accumulate count over carrier cycles
-next_cycle:
-    JMP Y-- send_result ; branch if Y was zero
+; carrier cycle loop
+.wrap_target
 
-; sync to carrier (TX rising edge)
+; synchronise to falling edge of carrier
     WAIT 1 IRQ 7        ; wait for IRQ and clear it
 
-; count until RX is low
-wait_low:
-    JMP X-- over_1      ; decrement counter
-over_1:
-    JMP PIN wait_low    ; branch if RX is high
+; count until RX is high
+rx_low:
+    JMP PIN rx_high     ; jump out if RX is high
+    JMP X-- rx_low      ; decrement counter
 
-; count until RX rising edge
-.wrap_target
-    JMP X-- over_2      ; decrement counter
-over_2:
-    JMP PIN next_cycle  ; branch if RX is high
+; count until RX falling edge
+rx_high:
+    JMP X-- over        ; decrement counter
+over:
+    JMP PIN rx_high     ; loop while RX remains high
+
+; accumulate count over several periods of carrier
+next_cycle:
+    JMP Y-- send_result ; branch if Y was zero
 .wrap
 
-;; 10 instructions
+;; 10 instructions, 4 instructions per carrier period
 
 
 % c-sdk {

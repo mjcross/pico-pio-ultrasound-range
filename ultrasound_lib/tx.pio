@@ -1,11 +1,18 @@
+;----------------------------------
+; Generate the transmit carrier,
+; raising IRQ 7 on the falling edge
+;----------------------------------
+
 .program tx
 .side_set 1
 
 PUBLIC entry:
 .wrap_target
-    nop             side 0
-    irq nowait 7    side 1  ; set GPIO high, raise IRQ7 and continue immediately
+    nop             side 1
+    irq nowait 7    side 0  ; set GPIO high and raise IRQ7 (falling edge)
 .wrap
+
+; 2 instructions (2 clocks per cycle)
 
 
 % c-sdk {
