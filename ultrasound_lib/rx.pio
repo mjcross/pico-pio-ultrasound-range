@@ -1,0 +1,64 @@
+.program rx
+
+;;---------------------------------------------------
+;; Measure the delay between the rising edges of the
+;; transmitted and received signals.
+;; Accumulate the count over a certain number of
+;; carrier cycles then send it via the RX FIFO.
+;; Synchronise with the TX program using IRQ7.
+;;---------------------------------------------------
+
+; send result to RX FIFO
+send_result:
+    MOV ISR, X
+    PUSH noblock
+
+; initialise counters
+PUBLIC entry:
+    SET X, 0            ; reset counter
+    SET Y, 16           ; cycles to count over
+
+; accumulate count over carrier cycles
+next_cycle:
+    JMP Y-- send_result ; branch if Y was zero
+
+; sync to carrier (TX rising edge)
+    WAIT 1 IRQ 7        ; wait for IRQ and clear it
+
+; count until RX is low
+wait_low:
+    JMP X-- over_1      ; decrement counter
+over_1:
+    JMP PIN wait_low    ; branch if RX is high
+
+; count until RX rising edge
+.wrap_target
+    JMP X-- over_2      ; decrement counter
+over_2:
+    JMP PIN next_cycle  ; branch if RX is high
+.wrap
+
+;; 10 instructions
+
+
+% c-sdk {
+static inline void rx_sm_init (PIO pio, uint sm, uint offset, uint gpio) {
+    // create and initialise a state machine configuration
+    pio_sm_config config = rx_program_get_default_config (offset);
+
+    // define the raw GPIO to be used for JMP PIN
+    sm_config_set_jmp_pin(&config, gpio);
+
+    // join the FIFOs for receive
+    sm_config_set_fifo_join(&config, PIO_FIFO_JOIN_RX);
+
+    // run the state machine at full speed
+    sm_config_set_clkdiv_int_frac (&config, 1, 0);
+
+    // apply the configuration to the state machine and initialise program counter to 'entry'
+    pio_sm_init (pio, sm, offset + rx_offset_entry, &config);
+
+    // allow the state machine to run
+    pio_sm_set_enabled (pio, sm, true);
+}
+%}

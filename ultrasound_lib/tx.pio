@@ -22,7 +22,7 @@ static inline void tx_sm_init (PIO pio, uint sm, uint offset, uint gpio, uint cl
     // apply the configuration to the state machine and initialise program counter to 'entry'
     pio_sm_init (pio, sm, offset + tx_offset_entry, &config);
 
-    // start state machine
+    // allow the state machine to run
     pio_sm_set_enabled (pio, sm, true);
 }
 %}
