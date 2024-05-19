@@ -1,47 +1,35 @@
 .program rx
 
 ;;---------------------------------------------------
-;; Measure the delay between the falling edges of the
-;; transmitted and received signals.
-;; Accumulate the count over a certain number of
-;; carrier periods then send it via the RX FIFO.
-;; Synchronise with the TX program using IRQ 7.
+;; temporary debug code to measure TX period
 ;;---------------------------------------------------
 
-; send result to RX FIFO
-send_result:
-    MOV ISR, !X         ; invert sign of counter
-    PUSH noblock
 
-; initialise counters
-PUBLIC entry:
-    SET X, 0            ; reset counter
-    SET Y, 16           ; carrier periods to count over
-
-; carrier cycle loop
 .wrap_target
+;; send result
+    mov isr, !x
+    push noblock
 
-; synchronise to falling edge of carrier
-    WAIT 1 IRQ 7        ; wait for IRQ and clear it
+;; reset counters
+PUBLIC entry:
+    mov x, !null        ; set x to -1
 
-; count until RX is high
-rx_low:
-    JMP PIN rx_high     ; jump out if RX is high
-    JMP X-- rx_low      ; decrement counter
+;; synchronise to TX falling edge
+    wait 1 irq 7
 
-; count until RX falling edge
-rx_high:
-    JMP X-- over        ; decrement counter
+;; count while RX is low
+loop_low:
+    jmp pin loop_high
+    jmp x-- loop_low
+
+;; count while RX is high
+loop_high:
+    jmp x-- over
 over:
-    JMP PIN rx_high     ; loop while RX remains high
-
-; accumulate count over several periods of carrier
-next_cycle:
-    JMP Y-- send_result ; branch if Y was zero
+    jmp pin loop_high
 .wrap
 
-;; 10 instructions, 4 instructions per carrier period
-
+    
 
 % c-sdk {
 static inline void rx_sm_init (PIO pio, uint sm, uint offset, uint gpio) {
@@ -53,9 +41,6 @@ static inline void rx_sm_init (PIO pio, uint sm, uint offset, uint gpio) {
 
     // join the FIFOs for receive
     sm_config_set_fifo_join(&config, PIO_FIFO_JOIN_RX);
-
-    // run the state machine at full speed
-    sm_config_set_clkdiv_int_frac (&config, 1, 0);
 
     // apply the configuration to the state machine and initialise program counter to 'entry'
     pio_sm_init (pio, sm, offset + rx_offset_entry, &config);

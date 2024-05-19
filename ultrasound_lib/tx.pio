@@ -4,27 +4,35 @@
 ;----------------------------------
 
 .program tx
-.side_set 1
+.side_set 1                 ; assign one side-set bit
 
 PUBLIC entry:
 .wrap_target
-    nop             side 1
-    irq nowait 7    side 0  ; set GPIO high and raise IRQ7 (falling edge)
+    set x, 31 [2]           side 1
+high_loop:
+    nop [15]                side 1
+    nop [15]                side 1
+    jmp x-- high_loop [15]  side 1
+
+    irq set 7               side 0
+    irq clear 7             side 0
+    set x, 31               side 0
+low_loop:
+    nop [15]                side 0
+    nop [15]                side 0
+    jmp x-- low_loop [15]   side 0
 .wrap
 
 ; 2 instructions (2 clocks per cycle)
 
 
 % c-sdk {
-static inline void tx_sm_init (PIO pio, uint sm, uint offset, uint gpio, uint clk_div_int) {
+static inline void tx_sm_init (PIO pio, uint sm, uint offset, uint gpio) {
     // create and initialise a state machine configuration
     pio_sm_config config = tx_program_get_default_config (offset);
 
     // update the configuration with the base sideset pin
     sm_config_set_sideset_pins (&config, gpio);
-
-    // update the configuration with the clock divider (integer only, to avoid jitter)
-    sm_config_set_clkdiv_int_frac (&config, clk_div_int, 0);
 
     // apply the configuration to the state machine and initialise program counter to 'entry'
     pio_sm_init (pio, sm, offset + tx_offset_entry, &config);

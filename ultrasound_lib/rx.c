@@ -22,7 +22,7 @@ bool rx_init (PIO pio, uint *p_sm, uint gpio) {
 
     // initialise the GPIO pin for the receiver (defaults to input)
     gpio_init(gpio);        // reset GPIO and set as input
-    gpio_pull_up(gpio);     // enable pullup (LM393 output is open collector)
+    gpio_disable_pulls(gpio);
 
     // configure and enable the state machine
     rx_sm_init (pio, *p_sm, offset, gpio);
