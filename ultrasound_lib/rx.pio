@@ -1,9 +1,9 @@
 .program rx
 
 ;;---------------------------------------------------
-;; temporary debug code to measure TX period
+;; Measure delay of received falling edge, accumulating
+;; count over 16 carrier cycles
 ;;---------------------------------------------------
-
 
 .wrap_target
 ;; send result
@@ -12,9 +12,11 @@
 
 ;; reset counters
 PUBLIC entry:
-    mov x, !null        ; set x to -1
+    mov x, !null        ; set phase counter to -1
+    set y, 15           ; accumulate count over 16 carrier cycles
 
 ;; synchronise to TX falling edge
+cycle_loop:
     wait 1 irq 7
 
 ;; count while RX is low
@@ -27,9 +29,12 @@ loop_high:
     jmp x-- over
 over:
     jmp pin loop_high
+
+;; accumulate count
+    jmp y-- cycle_loop
 .wrap
 
-    
+;; 10 instructions, 2 ticks per count (= 16ns, 0.0055mm)
 
 % c-sdk {
 static inline void rx_sm_init (PIO pio, uint sm, uint offset, uint gpio) {

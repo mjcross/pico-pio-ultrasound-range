@@ -1,24 +1,27 @@
-;----------------------------------
-; Generate the transmit carrier,
-; raising IRQ 7 on the falling edge
-;----------------------------------
+;--------------------------------------
+; Generate 41.118 kHz transmit carrier
+; with sync pulse on falling edge
+;--------------------------------------
 
 .program tx
 .side_set 1                 ; assign one side-set bit
 
 PUBLIC entry:
 .wrap_target
-    set x, 31 [2]           side 1
+
+;; GPIO high for 16 + 32 x (15+16+16) = 1,520 clock ticks
+    set x, 31 [15]           side 1
 high_loop:
-    nop [15]                side 1
+    nop [14]                side 1
     nop [15]                side 1
     jmp x-- high_loop [15]  side 1
 
-    irq set 7               side 0
+;; GPIO low for (1+1+14) + 32 x (15+16+16) = 1,520 clock ticks
+    irq set 7               side 0      ; sync pulse (1 tick)
     irq clear 7             side 0
     set x, 31               side 0
 low_loop:
-    nop [15]                side 0
+    nop [14]                side 0
     nop [15]                side 0
     jmp x-- low_loop [15]   side 0
 .wrap
