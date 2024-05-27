@@ -30,7 +30,7 @@ int main() {
         phase = pio_sm_get_blocking(PIO, rx_sm);
         sample_num += 1;
         if (sample_num % 1024 == 0) {
-            printf("%u\n", phase);
+            printf("%u\n", phase / 16);
         }
     }
 }

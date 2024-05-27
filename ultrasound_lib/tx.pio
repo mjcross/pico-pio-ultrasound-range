@@ -9,24 +9,27 @@
 PUBLIC entry:
 .wrap_target
 
-;; GPIO high for 16 + 32 x (15+16+16) = 1,520 clock ticks
-    set x, 31 [15]           side 1
+PUBLIC entry:
+
+.wrap_target
+;; GPIO high for (16)+32*(15+16+16) = 1,520 clock ticks
+    set x, 31 [15]           side 1     ; 16
 high_loop:
-    nop [14]                side 1
-    nop [15]                side 1
-    jmp x-- high_loop [15]  side 1
+    nop [14]                side 1      ; 15
+    nop [15]                side 1      ; 16
+    jmp x-- high_loop [15]  side 1      ; 16
 
 ;; GPIO low for (1+1+14) + 32 x (15+16+16) = 1,520 clock ticks
-    irq set 7               side 0      ; sync pulse (1 tick)
-    irq clear 7             side 0
-    set x, 31               side 0
+    irq set 7               side 0      ; 1     assert sync
+    irq clear 7             side 0      ; 1     clear sync
+    set x, 31 [13]          side 0      ; 14      
 low_loop:
-    nop [14]                side 0
-    nop [15]                side 0
-    jmp x-- low_loop [15]   side 0
+    nop [14]                side 0      ; 15
+    nop [15]                side 0      ; 16
+    jmp x-- low_loop [15]   side 0      ; 16
 .wrap
 
-; 2 instructions (2 clocks per cycle)
+;; --- 10 instructions ---
 
 
 % c-sdk {
